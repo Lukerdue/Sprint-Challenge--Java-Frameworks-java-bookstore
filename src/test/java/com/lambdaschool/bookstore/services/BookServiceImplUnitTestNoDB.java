@@ -20,6 +20,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static junit.framework.TestCase.assertEquals;
 
@@ -115,26 +116,45 @@ public class BookServiceImplUnitTestNoDB
     @Test
     public void findAll()
     {
+        Mockito.when(bookrepos.findAll())
+                .thenReturn(myBookList);
+        assertEquals(5, bookService.findAll().size());
     }
 
     @Test
     public void findBookById()
     {
+        Mockito.when(bookrepos.findById(10L))
+                .thenReturn(Optional.of(myBookList.get(0)));
+        assertEquals("Flatterland", bookService.findBookById(10L).getTitle());
     }
 
     @Test(expected = ResourceNotFoundException.class)
     public void notFindBookById()
     {
+        Mockito.when(bookrepos.findById(10L))
+                .thenThrow(ResourceNotFoundException.class);
+        assertEquals("Flatterland", bookService.findBookById(10L).getTitle());
     }
 
     @Test
     public void delete()
     {
+        Mockito.when(bookrepos.findById(10L))
+                .thenReturn(Optional.of(myBookList.get(0)));
+        Mockito.doNothing().when(bookrepos).deleteById(10L);
+        bookService.delete(10L);
+        assertEquals(5, myBookList.size());
     }
 
     @Test
     public void save()
     {
+        Book book = new Book();
+        book.setTitle("bravehearse");
+        Mockito.when(bookrepos.findById(10L))
+                .thenReturn(Optional.of(book));
+        bookService.save(book);
     }
 
     @Test
