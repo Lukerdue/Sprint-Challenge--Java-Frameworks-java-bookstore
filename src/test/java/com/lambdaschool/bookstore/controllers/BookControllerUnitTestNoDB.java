@@ -1,10 +1,12 @@
 package com.lambdaschool.bookstore.controllers;
 
 import com.lambdaschool.bookstore.BookstoreApplicationTest;
+import com.lambdaschool.bookstore.exceptions.ResourceNotFoundException;
 import com.lambdaschool.bookstore.models.Author;
 import com.lambdaschool.bookstore.models.Book;
 import com.lambdaschool.bookstore.models.Section;
 import com.lambdaschool.bookstore.models.Wrote;
+import com.lambdaschool.bookstore.repository.BookRepository;
 import com.lambdaschool.bookstore.services.BookService;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.junit.After;
@@ -27,9 +29,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import static io.restassured.module.mockmvc.RestAssuredMockMvc.delete;
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
 
@@ -46,6 +51,7 @@ public class BookControllerUnitTestNoDB
 
     @MockBean
     private BookService bookService;
+
 
     List<Book> myBookList = new ArrayList<>();
 
@@ -133,6 +139,7 @@ public class BookControllerUnitTestNoDB
     public void listAllBooks() throws
             Exception
     {
+        Mockito.when(bookService.findAll()).thenReturn(myBookList);
         given().when()
                 .get("/books/books")
                 .then()
@@ -145,6 +152,7 @@ public class BookControllerUnitTestNoDB
     public void getBookById() throws
             Exception
     {
+        Mockito.when(bookService.findBookById(4L)).thenReturn(myBookList.get(3));
         given().when()
                 .get("/books/book/"+4L)
                 .then()
@@ -158,13 +166,25 @@ public class BookControllerUnitTestNoDB
     public void getNoBookById() throws
             Exception
     {
-
+        Mockito.when(bookService.findBookById(10L)).thenThrow(ResourceNotFoundException.class);
+        given().when()
+                .get("/books/book/"+10L)
+                .then()
+                .statusCode(404);
     }
 
     @Test
     public void addNewBook() throws
             Exception
     {
+        Book book = new Book();
+        book.setTitle("new Book");
+        given().when()
+                .post("/books/book", book)
+                .then()
+                .statusCode(201)
+                .and()
+                .body(containsStringIgnoringCase("new Book"));
     }
 
     @Test
@@ -176,5 +196,10 @@ public class BookControllerUnitTestNoDB
     public void deleteBookById() throws
             Exception
     {
+        Mockito.when(bookService.findBookById(4)).thenReturn(myBookList.get(3));
+        given().when()
+                .delete("/books/book/"+4)
+                .then()
+                .statusCode(200);
     }
 }
